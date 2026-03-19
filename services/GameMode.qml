@@ -2,6 +2,7 @@ pragma Singleton
 
 import qs.services
 import qs.config
+import qs.utils
 import Caelestia
 import Quickshell
 import Quickshell.Io
@@ -10,7 +11,7 @@ import QtQuick
 Singleton {
     id: root
 
-    property alias enabled: props.enabled
+    property bool enabled: false
 
     function setDynamicConfs(): void {
         Hypr.extras.applyOptions({
@@ -21,8 +22,9 @@ Singleton {
             "general:gaps_out": 0,
             "general:border_size": 1,
             "decoration:rounding": 0,
-            "general:allow_tearing": 1
+            //"general:allow_tearing": 1
         });
+        Hypr.extras.message("keyword windowrule opacity 1 override 1 override 1 override, match:title .*");
     }
 
     onEnabledChanged: {
@@ -35,21 +37,45 @@ Singleton {
             if (Config.utilities.toasts.gameModeChanged)
                 Toaster.toast(qsTr("Game mode disabled"), qsTr("Hyprland settings restored"), "gamepad");
         }
+        saveState();
     }
 
-    PersistentProperties {
-        id: props
+    function saveState(): void {
+        const jsonContent = JSON.stringify({ enabled: root.enabled });
+        writeProcess.script = `mkdir -p ${Paths.state} && echo '${jsonContent}' > ${Paths.state}/gamemode.json`;
+        writeProcess.running = true;
+    }
 
-        property bool enabled: Hypr.options["animations:enabled"] === 0
+    Process {
+        id: writeProcess
+        property string script: ""
+        command: ["bash", "-c", script]
+        onExited: function(exitCode) {
+            if (exitCode !== 0)
+                console.warn("GameMode: Failed to save gamemode state, exit code:" + exitCode);
+        }
+    }
 
-        reloadableId: "gameMode"
+    FileView {
+        path: `${Paths.state}/gamemode.json`
+        printErrors: false
+        onLoaded: {
+            try {
+                root.enabled = JSON.parse(text()).enabled;
+            }
+            catch (e)
+            {
+                console.warn("GameMode: Failed to load gamemode state:", e);
+            }
+        }
+        Component.onCompleted: reload()
     }
 
     Connections {
         target: Hypr
 
         function onConfigReloaded(): void {
-            if (props.enabled)
+            if (root.enabled)
                 root.setDynamicConfs();
         }
     }
@@ -58,19 +84,19 @@ Singleton {
         target: "gameMode"
 
         function isEnabled(): bool {
-            return props.enabled;
+            return root.enabled;
         }
 
         function toggle(): void {
-            props.enabled = !props.enabled;
+            root.enabled = !root.enabled;
         }
 
         function enable(): void {
-            props.enabled = true;
+            root.enabled = true;
         }
 
         function disable(): void {
-            props.enabled = false;
+            root.enabled = false;
         }
     }
 }
