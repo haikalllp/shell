@@ -72,17 +72,15 @@ Singleton {
     }
 
     Connections {
-        target: Hypr
-
         function onConfigReloaded(): void {
             if (root.enabled)
                 root.setDynamicConfs();
         }
+
+        target: Hypr
     }
 
     IpcHandler {
-        target: "gameMode"
-
         function isEnabled(): bool {
             return root.enabled;
         }
@@ -98,5 +96,7 @@ Singleton {
         function disable(): void {
             root.enabled = false;
         }
+
+        target: "gameMode"
     }
 }
