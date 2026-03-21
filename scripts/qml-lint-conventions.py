@@ -9,7 +9,8 @@ Required ordering within each QML object (with blank line between sections):
   3. signal declarations
   4. JavaScript functions
   5. object properties (bindings)
-  6. child objects / component definitions
+  6. child objects
+  7. component definitions
 """
 
 import re
@@ -49,7 +50,6 @@ SECTION_NAMES = {
 }
 
 RULE_COLOURS = {
-    "missing-blank-after-id": RED,
     "section-order": YELLOW,
     "missing-section-separator": CYAN,
     "blank-after-open-brace": MAGENTA,
@@ -57,9 +57,7 @@ RULE_COLOURS = {
 }
 
 # Regexes
-PROPERTY_DECL_RE = re.compile(
-    r"^(?:required\s+|readonly\s+|default\s+)*property\s"
-)
+PROPERTY_DECL_RE = re.compile(r"^(?:required\s+|readonly\s+|default\s+)*property\s")
 SIGNAL_RE = re.compile(r"^signal\s")
 FUNCTION_RE = re.compile(r"^function\s")
 ID_RE = re.compile(r"^id\s*:\s*[a-zA-Z_]\w*\s*$")
@@ -163,12 +161,15 @@ def check_file(filepath: Path) -> list[Violation]:
         # Track blank lines per indent
         if not stripped:
             # Check: blank line right after opening brace of a QML object
-            if (i > 0 and func_skip_depth == 0 and not in_block_comment
-                    and lines[i - 1].strip().endswith("{")):
-                violations.append(Violation(
-                    rel, lineno, "blank-after-open-brace",
-                    "no blank line expected after opening brace",
-                ))
+            if i > 0 and func_skip_depth == 0 and not in_block_comment and lines[i - 1].strip().endswith("{"):
+                violations.append(
+                    Violation(
+                        rel,
+                        lineno,
+                        "blank-after-open-brace",
+                        "no blank line expected after opening brace",
+                    )
+                )
             for key in prev_blank:
                 prev_blank[key] = True
             continue
@@ -184,16 +185,19 @@ def check_file(filepath: Path) -> list[Violation]:
                 func_skip_depth = 0
             continue
 
-        # Closing brace: pop scope for this indent and all deeper scopes
+        # Closing brace: pop all scopes deeper than this indent
+        # (the scope at this indent belongs to the parent object and must persist)
         if stripped == "}":
             # Check: blank line right before closing brace
             if i > 0 and not lines[i - 1].strip():
-                violations.append(Violation(
-                    rel, lineno, "blank-before-close-brace",
-                    "no blank line expected before closing brace",
-                ))
-            scopes.pop(indent, None)
-            prev_blank.pop(indent, None)
+                violations.append(
+                    Violation(
+                        rel,
+                        lineno,
+                        "blank-before-close-brace",
+                        "no blank line expected before closing brace",
+                    )
+                )
             to_remove = [k for k in scopes if len(k) > len(indent)]
             for k in to_remove:
                 del scopes[k]
@@ -212,34 +216,29 @@ def check_file(filepath: Path) -> list[Violation]:
         tracker = scopes[indent]
         had_blank = prev_blank.get(indent, True)
 
-        # --- Check 1: Missing blank line after id ---
-        if section == Section.ID:
-            if i + 1 < len(lines):
-                next_stripped = lines[i + 1].strip()
-                if next_stripped and next_stripped != "}":
-                    violations.append(Violation(
-                        rel, lineno, "missing-blank-after-id",
-                        "id should be followed by a blank line",
-                    ))
-
-        # --- Check 2: Section ordering ---
+        # --- Check 1: Section ordering ---
         if tracker.last_section is not None and section < tracker.last_section:
-            violations.append(Violation(
-                rel, lineno, "section-order",
-                f"{SECTION_NAMES[section]} should appear before "
-                f"{SECTION_NAMES[tracker.last_section]} "
-                f"(seen at line {tracker.last_section_line})",
-            ))
+            violations.append(
+                Violation(
+                    rel,
+                    lineno,
+                    "section-order",
+                    f"{SECTION_NAMES[section]} should appear before "
+                    f"{SECTION_NAMES[tracker.last_section]} "
+                    f"(seen at line {tracker.last_section_line})",
+                )
+            )
 
-        # --- Check 3: Missing blank line between different sections ---
-        if (tracker.last_section is not None
-                and section != tracker.last_section
-                and not had_blank):
-            violations.append(Violation(
-                rel, lineno, "missing-section-separator",
-                f"blank line expected between {SECTION_NAMES[tracker.last_section]} "
-                f"and {SECTION_NAMES[section]}",
-            ))
+        # --- Check 2: Missing blank line between different sections ---
+        if tracker.last_section is not None and section != tracker.last_section and not had_blank:
+            violations.append(
+                Violation(
+                    rel,
+                    lineno,
+                    "missing-section-separator",
+                    f"blank line expected between {SECTION_NAMES[tracker.last_section]} and {SECTION_NAMES[section]}",
+                )
+            )
 
         # Update tracker
         if tracker.last_section is None or section >= tracker.last_section:
@@ -257,7 +256,7 @@ def check_file(filepath: Path) -> list[Violation]:
         # and expression blocks like `color: { ... }`)
         if brace_count > 0 and section == Section.BINDING:
             colon_idx = stripped.index(":")
-            after_colon = stripped[colon_idx + 1:].strip()
+            after_colon = stripped[colon_idx + 1 :].strip()
             # If content after : doesn't start with an uppercase type name,
             # it's a JS block (not an inline QML object like `contentItem: Rect {`)
             if not re.match(r"^[A-Z]", after_colon):
@@ -274,10 +273,7 @@ def check_file(filepath: Path) -> list[Violation]:
 
 
 def main():
-    qml_files = sorted(
-        p for p in REPO_ROOT.rglob("*.qml")
-        if "build" not in p.parts
-    )
+    qml_files = sorted(p for p in REPO_ROOT.rglob("*.qml") if "build" not in p.parts)
 
     print(f"{BOLD}Checking {len(qml_files)} QML files for convention violations...{RESET}\n")
 

@@ -1,7 +1,8 @@
+pragma ComponentBehavior: Bound
+
 import ".."
 import qs.components
 import qs.components.controls
-import qs.components.effects
 import qs.services
 import qs.config
 import QtQuick
@@ -34,8 +35,8 @@ StyledRect {
     Connections {
         function onContainsMouseChanged() {
             const newHovered = toggleStateLayer.containsMouse;
-            if (hovered !== newHovered) {
-                hovered = newHovered;
+            if (root.hovered !== newHovered) {
+                root.hovered = newHovered;
             }
         }
 

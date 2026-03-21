@@ -4,18 +4,17 @@ import qs.components.images
 import qs.services
 import qs.config
 import Caelestia.Models
-import Quickshell
 import QtQuick
 
 Item {
     id: root
 
     required property FileSystemEntry modelData
-    required property PersistentProperties visibilities
+    required property DrawerVisibilities visibilities
 
     scale: 0.5
     opacity: 0
-    z: PathView.z ?? 0
+    z: PathView.z ?? 0 // qmllint disable missing-property
 
     Component.onCompleted: {
         scale = Qt.binding(() => PathView.isCurrentItem ? 1 : PathView.onPath ? 0.8 : 0);

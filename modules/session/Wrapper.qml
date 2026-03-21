@@ -2,13 +2,12 @@ pragma ComponentBehavior: Bound
 
 import qs.components
 import qs.config
-import Quickshell
 import QtQuick
 
 Item {
     id: root
 
-    required property PersistentProperties visibilities
+    required property DrawerVisibilities visibilities
     required property var panels
     readonly property real nonAnimWidth: content.implicitWidth
 

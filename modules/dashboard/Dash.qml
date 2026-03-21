@@ -3,14 +3,13 @@ import qs.components.filedialog
 import qs.services
 import qs.config
 import "dash"
-import Quickshell
 import QtQuick.Layouts
 
 GridLayout {
     id: root
 
-    required property PersistentProperties visibilities
-    required property PersistentProperties state
+    required property DrawerVisibilities visibilities
+    required property DashboardState state
     required property FileDialog facePicker
 
     rowSpacing: Appearance.spacing.normal

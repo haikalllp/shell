@@ -1,7 +1,7 @@
 pragma ComponentBehavior: Bound
 
-import "items"
-import "services"
+import qs.modules.launcher.items
+import qs.modules.launcher.services
 import qs.components
 import qs.components.controls
 import qs.components.containers
@@ -14,7 +14,7 @@ StyledListView {
     id: root
 
     required property StyledTextField search
-    required property PersistentProperties visibilities
+    required property DrawerVisibilities visibilities
 
     model: ScriptModel {
         id: model

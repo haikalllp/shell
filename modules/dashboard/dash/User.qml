@@ -5,14 +5,13 @@ import qs.components.filedialog
 import qs.services
 import qs.config
 import qs.utils
-import Quickshell
 import QtQuick
 
 Row {
     id: root
 
-    required property PersistentProperties visibilities
-    required property PersistentProperties state
+    required property DrawerVisibilities visibilities
+    required property DashboardState state
     required property FileDialog facePicker
 
     padding: Appearance.padding.large
