@@ -1,13 +1,13 @@
 pragma ComponentBehavior: Bound
 
+import QtQuick
+import QtQuick.Layouts
+import Quickshell
 import qs.components
 import qs.components.controls
 import qs.services
 import qs.config
 import qs.utils
-import Quickshell
-import QtQuick
-import QtQuick.Layouts
 
 ColumnLayout {
     id: root
@@ -267,6 +267,13 @@ ColumnLayout {
                 focus: true
                 activeFocusOnTab: true
 
+                Component.onCompleted: {
+                    if (root.shouldBeVisible) {
+                        // Use Timer for actual delay to ensure focus works correctly
+                        passwordFocusTimer.start();
+                    }
+                }
+
                 Keys.onPressed: event => {
                     // Ensure we have focus when receiving keyboard input
                     if (!activeFocus) {
@@ -315,13 +322,6 @@ ColumnLayout {
                     interval: 50
                     onTriggered: {
                         passwordContainer.forceActiveFocus();
-                    }
-                }
-
-                Component.onCompleted: {
-                    if (root.shouldBeVisible) {
-                        // Use Timer for actual delay to ensure focus works correctly
-                        passwordFocusTimer.start();
                     }
                 }
 
