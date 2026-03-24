@@ -22,8 +22,9 @@ Singleton {
             "general:gaps_in": 0,
             "general:gaps_out": 0,
             "general:border_size": 1,
-            "decoration:rounding": 0
-            //"general:allow_tearing": 1
+            "decoration:rounding": 0,
+            "general:allow_tearing": 1,
+            "input:accel_profile": "flat"
         });
         Hypr.extras.message("keyword windowrule opacity 1 override 1 override 1 override, match:title .*");
     }
@@ -40,7 +41,7 @@ Singleton {
         if (enabled) {
             setDynamicConfs();
             if (Config.utilities.toasts.gameModeChanged)
-                Toaster.toast(qsTr("Game mode enabled"), qsTr("Disabled Hyprland animations, blur, gaps and shadows"), "gamepad");
+                Toaster.toast(qsTr("Game mode enabled"), qsTr("Disabled Hyprland animations, blur, gaps, shadows and mouse acceleration"), "gamepad");
         } else {
             Hypr.extras.message("reload");
             if (Config.utilities.toasts.gameModeChanged)
