@@ -15,10 +15,12 @@ Runtime deps include ddcutil, brightnessctl, libcava, libpipewire, aubio, libqal
 The C++ plugin must be built and installed for the shell to work. This only installs the native plugin to system paths — it does **not** touch `~/.config/quickshell/`.
 
 ```sh
-cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/
+cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/ -DVERSION=0.0.0
 cmake --build build
 sudo cmake --install build
 ```
+
+> `-DVERSION=0.0.0` is needed because the repo has no git tags. If building from a tagged release, you can omit it.
 
 Rebuild after changing anything in `plugin/` or `extras/`.
 
