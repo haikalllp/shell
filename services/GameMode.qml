@@ -14,6 +14,24 @@ Singleton {
 
     property bool enabled: false
 
+    // forces full opacity
+    // Windowrule for new windows + setprop for existing windows, batched to avoid races
+    function forceOpacity(): void {
+        const cmds = ["keyword windowrule opacity 1 override 1 override 1 override, match:title .*"];
+        for (const toplevel of Hypr.toplevels.values)
+            cmds.push(`dispatch setprop address:0x${toplevel.address} opaque 1`);
+        Hypr.extras.batchMessage(cmds);
+    }
+
+    // unset the opacity override for all windows
+    function revertOpacity(): void {
+        const cmds = [];
+        for (const toplevel of Hypr.toplevels.values)
+            cmds.push(`dispatch setprop address:0x${toplevel.address} opaque 0`);
+        cmds.push("reload");
+        Hypr.extras.batchMessage(cmds);
+    }
+
     function setDynamicConfs(): void {
         Hypr.extras.applyOptions({
             "animations:enabled": 0,
@@ -26,9 +44,10 @@ Singleton {
             "general:allow_tearing": 1,
             "input:accel_profile": "flat"
         });
-        Hypr.extras.message("keyword windowrule opacity 1 override 1 override 1 override, match:title .*");
+        forceOpacity();
     }
 
+    // save state to a file instead
     function saveState(): void {
         const jsonContent = JSON.stringify({
             enabled: root.enabled
@@ -43,7 +62,7 @@ Singleton {
             if (GlobalConfig.utilities.toasts.gameModeChanged)
                 Toaster.toast(qsTr("Game mode enabled"), qsTr("Disabled Hyprland animations, blur, gaps, shadows and mouse acceleration"), "gamepad");
         } else {
-            Hypr.extras.message("reload");
+            revertOpacity();
             if (GlobalConfig.utilities.toasts.gameModeChanged)
                 Toaster.toast(qsTr("Game mode disabled"), qsTr("Hyprland settings restored"), "gamepad");
         }
