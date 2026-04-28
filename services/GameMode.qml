@@ -52,7 +52,7 @@ Singleton {
         const jsonContent = JSON.stringify({
             enabled: root.enabled
         });
-        writeProcess.script = `mkdir -p ${Paths.state} && echo '${jsonContent}' > ${Paths.state}/gamemode.json`;
+        writeProcess.script = `mkdir -p ${Paths.state} && cat > ${Paths.state}/gamemode.json << 'EOF'\n${jsonContent}\nEOF`;
         writeProcess.running = true;
     }
 
