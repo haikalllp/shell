@@ -50,34 +50,119 @@ Item {
 
             active: root.opacity > 0
 
-            sourceComponent: Item {
-                ServiceRef {
-                    service: Audio.cava
+            sourceComponent: Config.background.visualiser.gpu ? gpuComp : cpuComp
+        }
+    }
+
+    Component {
+        id: cpuComp
+
+        Item {
+            ServiceRef {
+                service: Audio.cava
+            }
+
+            VisualiserBars {
+                id: bars
+
+                anchors.fill: parent
+                anchors.margins: Config.border.thickness
+                anchors.leftMargin: (ShellState.componentsFor(root.screen)?.bar?.exclusiveZone ?? 0) + Tokens.spacing.small * Config.background.visualiser.spacing
+
+                values: Audio.cava.values
+                primaryColor: Qt.alpha(Colours.palette.m3primary, 0.7)
+                secondaryColor: Qt.alpha(Colours.palette.m3inversePrimary, 0.7)
+                rounding: Tokens.rounding.medium * Config.background.visualiser.rounding
+                spacing: Tokens.spacing.extraSmall * Config.background.visualiser.spacing
+                animationDuration: Tokens.anim.durations.normal
+
+                Behavior on anchors.leftMargin {
+                    Anim {}
                 }
+            }
 
-                VisualiserBars {
-                    id: bars
+            FrameAnimation {
+                running: root.opacity > 0 && !bars.settled
+                onTriggered: bars.advance(frameTime)
+            }
+        }
+    }
 
-                    anchors.fill: parent
-                    anchors.margins: Config.border.thickness
-                    anchors.leftMargin: (ShellState.componentsFor(root.screen)?.bar?.exclusiveZone ?? 0) + Tokens.spacing.small * Config.background.visualiser.spacing
+    Component {
+        id: gpuComp
 
-                    values: Audio.cava.values
-                    primaryColor: Qt.alpha(Colours.palette.m3primary, 0.7)
-                    secondaryColor: Qt.alpha(Colours.palette.m3inversePrimary, 0.7)
-                    rounding: Tokens.rounding.medium * Config.background.visualiser.rounding
-                    spacing: Tokens.spacing.extraSmall * Config.background.visualiser.spacing
-                    animationDuration: Tokens.anim.durations.normal
+        Item {
+            id: gpu
 
-                    Behavior on anchors.leftMargin {
-                        Anim {}
+            readonly property var values: Audio.cava.values
+            readonly property int barCount: values.length
+            readonly property real dpr: (QsWindow.window as QsWindow)?.devicePixelRatio ?? 1
+
+            ServiceRef {
+                service: Audio.cava
+            }
+
+            Item {
+                id: encoder
+
+                visible: false
+                width: Math.max(gpu.barCount, 1)
+                height: 1
+
+                Repeater {
+                    model: gpu.barCount
+
+                    Rectangle {
+                        required property int index
+
+                        width: 1
+                        height: 1
+                        color: {
+                            const v = Math.min(Math.max(gpu.values[index] ?? 0, 0), 1);
+                            const x = Math.round(v * 65535);
+                            return Qt.rgba(Math.floor(x / 256) / 255, (x % 256) / 255, 0, 1);
+                        }
                     }
                 }
+            }
 
-                FrameAnimation {
-                    running: root.opacity > 0 && !bars.settled
-                    onTriggered: bars.advance(frameTime)
+            ShaderEffectSource {
+                id: tex
+
+                sourceItem: encoder
+                textureSize: Qt.size(Math.max(gpu.barCount, 1), 1)
+                smooth: false
+                live: false
+            }
+
+            Connections {
+                target: Audio.cava
+
+                function onValuesChanged(): void {
+                    tex.scheduleUpdate();
                 }
+            }
+
+            ShaderEffect {
+                anchors.fill: parent
+                anchors.margins: Config.border.thickness
+                anchors.leftMargin: (ShellState.componentsFor(root.screen)?.bar?.exclusiveZone ?? 0) + Tokens.spacing.small * Config.background.visualiser.spacing
+
+                Behavior on anchors.leftMargin {
+                    Anim {}
+                }
+
+                property var dataTex: tex
+                property real itemWidth: width
+                property real itemHeight: height
+                property int barCount: gpu.barCount
+                property real rounding: Tokens.rounding.medium * Config.background.visualiser.rounding
+                property real spacing: Tokens.spacing.extraSmall * Config.background.visualiser.spacing
+                property real dpr: gpu.dpr
+                property color primaryColor: Qt.alpha(Colours.palette.m3primary, 0.7)
+                property color secondaryColor: Qt.alpha(Colours.palette.m3inversePrimary, 0.7)
+
+                fragmentShader: "qrc:/shaders/visualiser.frag.qsb"
             }
         }
     }
